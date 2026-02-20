@@ -1,17 +1,17 @@
 body {
   text-align: center;
-}
-
-ul {
-  list-style-position: inside;
-  padding: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background-color: #f5f0e8;
+  color: #2b2b2b;
 }
 
 a {
   display: inline-block;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: #2b2b2b;
+  transition: transform 0.4s ease, opacity 0.4s ease;
 }
 
 a:hover {
-  transform: scale(1.2);
+  transform: translateY(-2px);
+  opacity: 0.6;
 }
