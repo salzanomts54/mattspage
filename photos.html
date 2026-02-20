@@ -2,26 +2,7 @@
 <head>
 <title>Photos - Matt's Page</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.js"></script>
 <style>
-  #upload-area {
-    border: 2px dashed #999;
-    padding: 40px 20px;
-    margin: 20px auto;
-    max-width: 500px;
-    cursor: pointer;
-    transition: border-color 0.3s ease, background-color 0.3s ease;
-  }
-  #upload-area:hover, #upload-area.dragover {
-    border-color: #2b2b2b;
-    background-color: #ebe6dc;
-  }
-  #upload-area p {
-    margin: 0;
-    color: #666;
-  }
-  #file-input { display: none; }
-
   .photo-entry {
     max-width: 700px;
     margin: 40px auto;
@@ -44,18 +25,6 @@
     margin-top: 8px;
     letter-spacing: 0.02em;
   }
-  .photo-entry .remove-btn {
-    font-size: 0.75em;
-    color: #999;
-    cursor: pointer;
-    border: none;
-    background: none;
-    margin-top: 6px;
-    text-decoration: underline;
-  }
-  .photo-entry .remove-btn:hover {
-    color: #c00;
-  }
 </style>
 </head>
 <body>
@@ -63,193 +32,13 @@
 <hr>
 <p><a href="index.html">Back to Home</a></p>
 
-<div id="upload-area">
-  <p>Click or drag a photo here to add it</p>
-  <input type="file" id="file-input" accept="image/*">
+<div class="photo-entry">
+  <h2>February 13, 2026</h2>
+  <img src="_MG_2075.jpg" alt="Photo by Matt Salzano">
+  <p class="photo-meta">Canon EOS R100 &nbsp;&middot;&nbsp; RF24mm F1.8 MACRO IS STM &nbsp;&middot;&nbsp; 24mm &nbsp;&middot;&nbsp; &fnof;/1.8 &nbsp;&middot;&nbsp; 1/500s &nbsp;&middot;&nbsp; ISO 100</p>
 </div>
-
-<div id="gallery"></div>
 
 <hr>
 <address>Last updated: February 2026</address>
-
-<script>
-const uploadArea = document.getElementById('upload-area');
-const fileInput = document.getElementById('file-input');
-const gallery = document.getElementById('gallery');
-
-// Click to upload
-uploadArea.addEventListener('click', () => fileInput.click());
-
-// Drag and drop
-uploadArea.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  uploadArea.classList.add('dragover');
-});
-uploadArea.addEventListener('dragleave', () => {
-  uploadArea.classList.remove('dragover');
-});
-uploadArea.addEventListener('drop', (e) => {
-  e.preventDefault();
-  uploadArea.classList.remove('dragover');
-  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-
-fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) handleFile(fileInput.files[0]);
-  fileInput.value = '';
-});
-
-async function handleFile(file) {
-  if (!file.type.startsWith('image/')) return;
-
-  const dataUrl = await fileToDataUrl(file);
-  let meta = {};
-
-  try {
-    const exif = await exifr.parse(file, {
-      pick: [
-        'DateTimeOriginal', 'CreateDate',
-        'Make', 'Model',
-        'ISO', 'ISOSpeedRatings',
-        'ExposureTime', 'ShutterSpeedValue',
-        'FNumber', 'ApertureValue',
-        'FocalLength', 'FocalLengthIn35mmFormat',
-        'LensModel', 'LensMake',
-        'ExposureCompensation', 'ExposureBiasValue'
-      ]
-    });
-    if (exif) meta = exif;
-  } catch (e) {
-    // No EXIF — that's ok
-  }
-
-  const entry = { dataUrl, meta: serializeMeta(meta), id: Date.now() };
-  const photos = loadPhotos();
-  photos.unshift(entry);
-  savePhotos(photos);
-  renderGallery();
-}
-
-function serializeMeta(exif) {
-  const m = {};
-
-  // Date
-  const d = exif.DateTimeOriginal || exif.CreateDate;
-  if (d instanceof Date) {
-    m.date = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  } else if (typeof d === 'string') {
-    m.date = d;
-  }
-
-  // Camera
-  const make = exif.Make || '';
-  const model = exif.Model || '';
-  // Avoid duplicating make in model string (e.g. "SONY" + "SONY A7III")
-  if (model && model.toLowerCase().startsWith(make.toLowerCase())) {
-    m.camera = model;
-  } else if (make || model) {
-    m.camera = [make, model].filter(Boolean).join(' ');
-  }
-
-  // Lens
-  if (exif.LensModel) m.lens = exif.LensModel;
-
-  // Focal length
-  const fl = exif.FocalLength || exif.FocalLengthIn35mmFormat;
-  if (fl) m.focalLength = Math.round(fl) + 'mm';
-
-  // Aperture
-  const ap = exif.FNumber || exif.ApertureValue;
-  if (ap) m.aperture = '\u0192/' + ap;
-
-  // Shutter speed
-  const ss = exif.ExposureTime;
-  if (ss) {
-    m.shutter = ss >= 1 ? ss + 's' : '1/' + Math.round(1 / ss) + 's';
-  }
-
-  // ISO
-  const iso = exif.ISO || exif.ISOSpeedRatings;
-  if (iso) m.iso = 'ISO ' + iso;
-
-  // Exposure comp
-  const ec = exif.ExposureCompensation || exif.ExposureBiasValue;
-  if (ec !== undefined && ec !== null) {
-    const sign = ec > 0 ? '+' : '';
-    m.exposureComp = sign + ec + ' EV';
-  }
-
-  return m;
-}
-
-function renderGallery() {
-  const photos = loadPhotos();
-  gallery.innerHTML = '';
-
-  photos.forEach((photo) => {
-    const div = document.createElement('div');
-    div.className = 'photo-entry';
-
-    // Date header
-    const heading = photo.meta.date || 'Unknown date';
-    let html = '<h2>' + heading + '</h2>';
-
-    // Image
-    html += '<img src="' + photo.dataUrl + '" alt="Photo">';
-
-    // Camera settings line
-    const parts = [];
-    if (photo.meta.camera) parts.push(photo.meta.camera);
-    if (photo.meta.lens) parts.push(photo.meta.lens);
-    if (photo.meta.focalLength) parts.push(photo.meta.focalLength);
-    if (photo.meta.aperture) parts.push(photo.meta.aperture);
-    if (photo.meta.shutter) parts.push(photo.meta.shutter);
-    if (photo.meta.iso) parts.push(photo.meta.iso);
-    if (photo.meta.exposureComp) parts.push(photo.meta.exposureComp);
-
-    if (parts.length) {
-      html += '<p class="photo-meta">' + parts.join(' &nbsp;&middot;&nbsp; ') + '</p>';
-    }
-
-    // Remove button
-    html += '<button class="remove-btn" data-id="' + photo.id + '">remove</button>';
-
-    div.innerHTML = html;
-    gallery.appendChild(div);
-  });
-
-  // Wire up remove buttons
-  gallery.querySelectorAll('.remove-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = Number(btn.dataset.id);
-      const photos = loadPhotos().filter((p) => p.id !== id);
-      savePhotos(photos);
-      renderGallery();
-    });
-  });
-}
-
-function fileToDataUrl(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.readAsDataURL(file);
-  });
-}
-
-function loadPhotos() {
-  try {
-    return JSON.parse(localStorage.getItem('matts_photos') || '[]');
-  } catch { return []; }
-}
-
-function savePhotos(photos) {
-  localStorage.setItem('matts_photos', JSON.stringify(photos));
-}
-
-// Render on load
-renderGallery();
-</script>
 </body>
 </html>
