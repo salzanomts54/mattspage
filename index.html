@@ -98,6 +98,16 @@
 
 <script>
 (function () {
+  /* ── Skip intro if already seen this session ── */
+  var loader  = document.getElementById('loader');
+  var content = document.getElementById('main-content');
+
+  if (sessionStorage.getItem('intro-seen')) {
+    loader.style.display = 'none';
+    content.classList.add('visible');
+    return;
+  }
+
   /* ── Matrix rain ── */
   var canvas = document.getElementById('matrix-canvas');
   var ctx = canvas.getContext('2d');
@@ -170,6 +180,7 @@
       setTimeout(function () {
         loader.classList.add('fade-out');
         content.classList.add('visible');
+        sessionStorage.setItem('intro-seen', '1');
 
         setTimeout(function () {
           clearInterval(matrixInterval);
