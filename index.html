@@ -2,17 +2,184 @@
 <head>
 <title>Matt's Page</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  /* ── Loading overlay ── */
+  #loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #f5f0e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    overflow: hidden;
+    transition: opacity 0.4s ease;
+  }
+  #loader.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Matrix rain canvas */
+  #matrix-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Countdown number */
+  #countdown {
+    position: relative;
+    z-index: 2;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 8rem;
+    font-weight: bold;
+    color: #4a7c59;
+    text-shadow: 0 0 20px rgba(74, 124, 89, 0.4), 0 0 40px rgba(74, 124, 89, 0.2);
+    animation: pulse 1s ease-in-out infinite;
+    user-select: none;
+  }
+  #countdown-label {
+    position: relative;
+    z-index: 2;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.85rem;
+    color: #6b8f71;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 12px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.85; }
+  }
+
+  /* ── Pull-in / zoom transition on main content ── */
+  #main-content {
+    opacity: 0;
+    transform: scale(0.3) translateY(60px);
+    filter: blur(8px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #main-content.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+</style>
 </head>
 <body>
-<h1>Matt's Page</h1>
-<hr>
-<p>Welcome to my homepage on the World Wide Web!</p>
-<p>
-<a href="about.html">about</a> &middot;
-<a href="thoughts.html">thoughts</a> &middot;
-<a href="photos.html">photos</a>
-</p>
-<hr>
-<address>Last updated: February 2026</address>
+
+<!-- Loading screen -->
+<div id="loader">
+  <canvas id="matrix-canvas"></canvas>
+  <div id="countdown">3</div>
+  <div id="countdown-label">initializing</div>
+</div>
+
+<!-- Actual page content -->
+<div id="main-content">
+  <h1>Matt's Page</h1>
+  <hr>
+  <p>Welcome to my homepage on the World Wide Web!</p>
+  <p>
+  <a href="about.html">about</a> &middot;
+  <a href="thoughts.html">thoughts</a> &middot;
+  <a href="photos.html">photos</a>
+  </p>
+  <hr>
+  <address>Last updated: February 2026</address>
+</div>
+
+<script>
+(function () {
+  /* ── Matrix rain ── */
+  var canvas = document.getElementById('matrix-canvas');
+  var ctx = canvas.getContext('2d');
+
+  function sizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  sizeCanvas();
+  window.addEventListener('resize', sizeCanvas);
+
+  var chars = '01アイウエオカキクケコサシスセソタチツテトMATT.<>/{}[];=+-_|\\~`!@#$%^&*()';
+  chars = chars.split('');
+
+  var fontSize = 14;
+  var columns = Math.floor(canvas.width / fontSize);
+  var drops = [];
+  for (var i = 0; i < columns; i++) {
+    drops[i] = Math.random() * -100;
+  }
+
+  /* Lighter color palette to match the site */
+  var greens = [
+    'rgba(74, 124, 89, 0.9)',   /* main green */
+    'rgba(107, 143, 113, 0.7)', /* muted */
+    'rgba(140, 170, 140, 0.5)', /* light */
+    'rgba(90, 140, 100, 0.8)'   /* mid */
+  ];
+
+  function drawMatrix() {
+    ctx.fillStyle = 'rgba(245, 240, 232, 0.12)'; /* site bg with trail */
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = fontSize + 'px "Courier New", monospace';
+
+    for (var i = 0; i < drops.length; i++) {
+      var char = chars[Math.floor(Math.random() * chars.length)];
+      var color = greens[Math.floor(Math.random() * greens.length)];
+      ctx.fillStyle = color;
+      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  var matrixInterval = setInterval(drawMatrix, 45);
+
+  /* ── Countdown ── */
+  var countEl = document.getElementById('countdown');
+  var labelEl = document.getElementById('countdown-label');
+  var loader  = document.getElementById('loader');
+  var content = document.getElementById('main-content');
+  var count = 3;
+
+  var labels = { 3: 'initializing', 2: 'decrypting', 1: 'entering' };
+
+  var countdownTimer = setInterval(function () {
+    count--;
+    if (count > 0) {
+      countEl.textContent = count;
+      labelEl.textContent = labels[count] || '';
+    } else {
+      clearInterval(countdownTimer);
+      /* Trigger the pull-in */
+      countEl.textContent = '>';
+      labelEl.textContent = 'welcome';
+
+      setTimeout(function () {
+        loader.classList.add('fade-out');
+        content.classList.add('visible');
+
+        setTimeout(function () {
+          clearInterval(matrixInterval);
+          loader.style.display = 'none';
+        }, 600);
+      }, 400);
+    }
+  }, 1000);
+})();
+</script>
+
 </body>
 </html>
