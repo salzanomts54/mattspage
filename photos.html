@@ -4,7 +4,8 @@
 <link rel="stylesheet" href="style.css">
 <style>
   .photo-entry {
-    max-width: 700px;
+    max-width: 90vw;
+    width: 90%;
     margin: 40px auto;
     text-align: center;
   }
@@ -14,16 +15,38 @@
     margin-bottom: 12px;
   }
   .photo-entry img {
+    width: 100%;
     max-width: 100%;
     height: auto;
     display: block;
     margin: 0 auto;
+    border-radius: 2px;
   }
   .photo-meta {
     font-size: 0.85em;
     color: #666;
     margin-top: 8px;
     letter-spacing: 0.02em;
+  }
+
+  /* Responsive breakpoints */
+  @media (min-width: 768px) {
+    .photo-entry {
+      max-width: 85vw;
+      width: 85%;
+    }
+  }
+  @media (min-width: 1200px) {
+    .photo-entry {
+      max-width: 75vw;
+      width: 75%;
+    }
+  }
+  @media (min-width: 1800px) {
+    .photo-entry {
+      max-width: 65vw;
+      width: 65%;
+    }
   }
 </style>
 </head>
